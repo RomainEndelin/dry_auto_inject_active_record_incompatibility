@@ -1,24 +1,34 @@
-# README
+# Dry Auto-Inject and ActiveRecord compatibility issue
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+## Important files:
 
-Things you may want to cover:
+- `app/initializers/dependency_manager.rb`
 
-* Ruby version
+```ruby
+module DependencyManager
+  Container = Dry::Container.new
 
-* System dependencies
+  Container.register(:hello) { 'world' }
 
-* Configuration
+  Import = Dry::AutoInject(Container)
+end
 
-* Database creation
+```
 
-* Database initialization
+- `app/models/user.rb`
 
-* How to run the test suite
+```ruby
+class User < ApplicationRecord
+  include DependencyManager::Import[:hello]
+end
+```
 
-* Services (job queues, cache servers, search engines, etc.)
+## How to reproduce:
 
-* Deployment instructions
-
-* ...
+```ruby
+irb(main):001:0> User.new.hello
+=> "world"
+irb(main):002:0> User.first.hello
+  User Load (0.2ms)  SELECT  "users".* FROM "users" ORDER BY "users"."id" ASC LIMIT ?  [["LIMIT", 1]]
+=> nil
+```
